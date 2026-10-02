@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Response
 from pydantic import BaseModel
 import pandas as pd
 import joblib
@@ -9,19 +9,25 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 
 ml_model = {} #{"model":"credit_risk_model.pkl"}
+BASE_DIR = Path(__file__).resolve().parent
 
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    ml_model['model'] = joblib.load('credit_risk_model.pkl')
-    ml_model['threshold'] = joblib.load('best_threshold.pkl')
+    ml_model['model'] = joblib.load(BASE_DIR / 'credit_risk_model.pkl')
+    ml_model['threshold'] = joblib.load(BASE_DIR / 'best_threshold.pkl')
 
     yield
 
     ml_model.clear()
 
 app = FastAPI(lifespan=lifespan)
+
+
+@app.get("/favicon.ico", include_in_schema=False)
+async def favicon():
+    return Response(status_code=204)
 
 
 #The only columns that user will see and provide inputs.
@@ -42,7 +48,7 @@ class LoanApplication(BaseModel): #Pydantic Model (Validation)
 
 @app.post('/predict')
 def predict(data : LoanApplication):
-    input_df = pd.DataFrame([data.dict()])
+    input_df = pd.DataFrame([data.model_dump()])
 
     probability = ml_model['model'].predict_proba(input_df)[:, 1][0]
 
@@ -57,10 +63,11 @@ def predict(data : LoanApplication):
 
 @app.get("/")
 async def root():
-    index_file = Path("static") / "index (1).html"
+    index_file = BASE_DIR / "static" / "index (1).html"
     if not index_file.exists():
         return {"message": "Frontend not found"}
     return FileResponse(index_file)
 
-if Path("static").is_dir():
-    app.mount("/static", StaticFiles(directory="static"), name="static")
+STATIC_DIR = BASE_DIR / "static"
+if STATIC_DIR.is_dir():
+    app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")

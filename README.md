@@ -20,24 +20,22 @@ Then open:
 http://localhost:8000/
 ```
 
-## Deploy to GitHub + hosting
+## Deploy with Vercel
 
-This app cannot be deployed directly on GitHub Pages because it uses a Python backend and dynamic API routes.
+GitHub stores the source code; it does not run this Python backend. GitHub Pages is only for static sites, so it cannot serve this app's `/predict` API.
 
-Recommended path:
-1. Push this repository to GitHub
-2. Deploy from GitHub to a Python host such as Render, Railway, or Fly.io
-3. Set the app to run with:
+1. Push the project to GitHub.
+2. In Vercel, choose **Add New Project** and import this GitHub repository.
+3. Keep the project root set to the repository root. Vercel detects `app.py` and deploys the FastAPI app.
+4. Deploy. New pushes to the connected GitHub branch will trigger deployments.
 
-```bash
-python -m uvicorn mai:app --host 0.0.0.0 --port 8000
-```
+The model files (`credit_risk_model.pkl` and `best_threshold.pkl`) must be committed to the repository because the app loads them at startup. The static frontend is served by FastAPI from `static/`.
 
 ## Files
 - `mai.py` - FastAPI app
 - `static/` - frontend files
-- `credit_risk_model.pkl` - trained model
-- `best_threshold.pkl` - threshold value
+- `credit_risk_model.pkl` - trained model required at deployment
+- `best_threshold.pkl` - threshold value required at deployment
 - `credit_risk_dataset.csv` - dataset used for training
 
 ## Notes
